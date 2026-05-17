@@ -59,10 +59,44 @@ function updatePreview() {
  `;
 }
 
+// =========================================================================
+//Change X
+// varifying the player name input before allowing the game to start or settings to be svaed
+
+
+function validatePlayerForm() {
+  var theName = playerName.value;
+
+  // Check if th name box is filled
+  if (theName == "") {
+    alert("Wait! You forgot to enter your Player Name!");
+    return false; // Stops the form from continuing
+  }
+
+  //ceck if the name is too short
+  if (theName.length < 3) {
+    alert("Your Player Name is too short! It must be at least 3 letters.");
+    return false; // Stops the form from continuing
+  }
+
+  //check if the name is too long
+  if (theName.length > 10) {
+    alert("Your Player Name is too long! Keep it under 12 letters.");
+    return false; // Stops the form from continuing
+  }
+  return true;
+}
+
 //these setting should be saved to the local storage, and showing a message if it has been saved
 //============Save Settings===================
 const saveButton = document.getElementById("saveSettingsBtn");
 saveButton.addEventListener("click", () => {
+  // Change X
+  // Run validation before saving
+  if (validatePlayerForm() == false) {
+    return; // exit if not valid
+  }
+
   const settings = {
     playerName: playerName.value,
     boardSize: boardSize.value,
@@ -122,6 +156,12 @@ resetButton.addEventListener("click", () => {
 //===================Open GAme with latest saved settings===========
 const startGameBtn = document.getElementById("openGameBtn");
 startGameBtn.addEventListener("click", () => {
+  // Change x
+  //run validation before opening the game
+  if (validatePlayerForm() == false) {
+    return; // exit if not valid
+  }
+
   const settings = {
     playerName: playerName.value,
     boardSize: boardSize.value,

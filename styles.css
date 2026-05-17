@@ -224,6 +224,60 @@ button:disabled {
     margin-top: 24px;
 }
 
+/* change x
+ Added background for Sum and Answer
+ */
+.bg-sum-and-answer {
+    background: linear-gradient(to right, #f6fcfd, #dcf0f7, #bce5f4, #91daf2, #76cde9);
+}
+
+/* end of change x */
+
+/* change x
+ Added background for Mixed Array
+ */
+.bg-mixed-array {
+    background: linear-gradient(to right, #FFB8D9, #FFF9C8, #C6EED6, #B3E1F8, #E6CBF7);
+}
+
+/* end of change x */
+
+/* change x
+ Added styles for the Example Match card container on the side
+ */
+.example-container {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    z-index: 100;
+}
+
+.example-container h3 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: #1d3557;
+}
+
+.example-cards {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.example-cards .number-card {
+    width: 60px;
+    height: 60px;
+    font-size: 0.9rem;
+    padding: 4px;
+}
+/* end of change x */
+
 @media (max-width: 800px) {
     .game-stats-grid {
         grid-template-columns: 1fr;
@@ -245,4 +299,10 @@ button:disabled {
         font-size: 0.75rem;
         padding: 4px;
     }
+
+    /* change x: hide example container on small screens */
+    .example-container {
+        display: none;
+    }
+    /* end of change x */
 }

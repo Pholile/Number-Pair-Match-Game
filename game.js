@@ -35,11 +35,48 @@ const retrieveGameCookie = (n) =>
     .find((r) => r.startsWith(n + "="))
     ?.split("=")[1] || "";
 
+/* change x
+ Set example match based on pairType
+ */
+function setExampleMatch(pairType) {
+  const ex1 = el("exampleCard1");
+  const ex2 = el("exampleCard2");
+  if (!ex1 || !ex2) return;
+
+  if (pairType === "Sum and Answer") {
+    ex1.innerHTML = "2+2";
+    ex2.innerHTML = "4";
+  }
+
+  else if (pairType === "Mixed") {
+    ex1.innerHTML = "5+5";
+    ex2.innerHTML = "10";
+  }
+  else {
+    // Default to Number and Word
+    ex1.innerHTML = "1";
+    ex2.innerHTML = "one";
+  }
+}
+/* end of change x */
+
 //====================loading the html===============
 //html musy have saved settings from the luancher
 window.onload = () => {
   //from gmae 3, yt version
   const cfg = JSON.parse(localStorage.getItem("gameSavedSettings") || "{}");
+
+  //change x
+  //add backgrounds for Sum and Answer & Mixed Array
+
+  document.body.classList.remove("bg-sum-and-answer", "bg-mixed-array");
+  if (cfg.pairType === "Sum and Answer") {
+    document.body.classList.add("bg-sum-and-answer");
+  } else if (cfg.pairType === "Mixed") {
+    document.body.classList.add("bg-mixed-array");
+  }
+  //end of change x
+
   if (cfg.playerName) {
     el("displayPlayer").innerHTML = cfg.playerName;
     el("displayBoardSize").innerHTML = cfg.boardSize;
@@ -47,6 +84,11 @@ window.onload = () => {
       cfg.difficulty.charAt(0).toUpperCase() + cfg.difficulty.slice(1);
     el("displayPairType").innerHTML = cfg.pairType;
   }
+
+  //change x: update example match on page load
+  setExampleMatch(cfg.pairType);
+  //end of change x
+
   el("displayBestScore").innerHTML = retrieveGameCookie("bestScore") || "120";
 };
 
@@ -70,6 +112,71 @@ el("backBtn").onclick = () => {//goiung back to setting page
   window.location.href = "index.html";//loading on the same page
 };
 
+//=========================================================================================================================
+// change x: 
+// added a hints button featurre for the playr to flip the cards for 2 seconds 
+
+
+
+var hintsUsedSoFar = 0;
+
+//function for showing the hint
+function showHintToPlayer() {
+  //get the saved settings from the launcher to check if they clicked enableHints
+  var cfg = JSON.parse(localStorage.getItem("gameSavedSettings") || "{}");
+
+  if (isBoardLocked == true) {
+    return;
+  }
+
+  if (cfg.enableHints == true) { // check if hints are turned on
+    if (hintsUsedSoFar < 2) { // check if they have hints left
+      hintsUsedSoFar = hintsUsedSoFar + 1; // count hint
+      var allCardsOnBoard = document.getElementsByClassName("number-card"); // get all cards
+
+      var oldLock = isBoardLocked; //save the lock state
+      isBoardLocked = true; // lock the board so they cant click
+
+      // go through everyard
+      for (var i = 0; i < allCardsOnBoard.length; i++) {
+        var theCard = allCardsOnBoard[i];
+        // if the card is not already matched or flipped, flip it and add the hint tag so we know its a hint card
+        if (theCard.classList.contains("matched") == false && theCard.classList.contains("flipped") == false) {
+          theCard.innerHTML = theCard.getAttribute("data");
+          theCard.classList.add("flipped");
+          theCard.classList.add("hint-card");
+        }
+      }
+
+      // wait for 2 seconds (2000 ms) and then flip them back
+      setTimeout(function () {
+        for (var j = 0; j < allCardsOnBoard.length; j++) {
+          var aCard = allCardsOnBoard[j];
+          if (aCard.classList.contains("hint-card") == true) {
+            aCard.innerHTML = "?";
+            aCard.classList.remove("flipped");
+            aCard.classList.remove("hint-card"); // remove the tag so we know its not a hint card anymore
+          }
+        }
+        isBoardLocked = oldLock;
+      }, 2000); // 2 seconds max
+
+    }
+
+    else {
+      alert("You already used up your hints this round!"); // mgs if out of hints
+    }
+  }
+
+  else {
+    alert("Hints are disabled in settings! Go to launcher to enable them."); //msg if disabled
+  }
+}
+
+el("hintBtn").onclick = showHintToPlayer; //attach the function to the button
+// end of change x
+//============================================
+
 el("saveBtn").onclick = () => {
   if (!movesCount && !currentScore && !pairsRemaining)
     return alert("There is no active game to save.");
@@ -82,27 +189,34 @@ el("saveBtn").onclick = () => {
 
   //storing the game if the player has already played and moves have already been made(0001)
 
-  localStorage.setItem(
-    "gameSession",
-    JSON.stringify({
-      movesCount,
-      matchesFound,
-      pairsRemaining,
-      currentScore,
-      elapsedSeconds,
-      deck,
-      boardClass: el("gameBoard").className,
-    }),
-  );
+  // ===================================================================
+  // Change X
+  // I learned that sessionStorage is better for temporary saves because it clears when the tab closes.
+
+  var mySaveData = JSON.stringify({
+    movesCount: movesCount,
+    matchesFound: matchesFound,
+    pairsRemaining: pairsRemaining,
+    currentScore: currentScore,
+    elapsedSeconds: elapsedSeconds,
+    deck: deck,
+    boardClass: el("gameBoard").className,
+  });
+  sessionStorage.setItem("myGameSession", mySaveData);
   alert("Your game session has been saved!");
 };
 
 el("loadBtn").onclick = () => {
-  const state = JSON.parse(localStorage.getItem("gameSession"));
-  if (!state) return alert("No gmae saved");
+  // ================================================
+  // Change X
+  // I learned that sessionStorage is better for temporary saves because it clears when the tab closes.
+
+  var savedString = sessionStorage.getItem("myGameSession");
+  const state = JSON.parse(savedString);
+  if (!state) return alert("Oops! No game saved in this session!");
   ({ movesCount, matchesFound, pairsRemaining, currentScore, elapsedSeconds } =
-    state);//getting the loaded game, that has already been saved.(0001)
-  updateGame();//0002
+    state);//getting the loaded game, that has already been saved.
+  updateGame();
   el("gameBoard").className = state.boardClass;
   el("gameBoard").innerHTML = "";
   state.deck.forEach((d) => {
@@ -128,15 +242,32 @@ function startnewGame() {
   el("gameBoard").innerHTML = el("logArea").innerHTML = "";
   el("messageArea").innerHTML = "Let's match the game";
   movesCount = matchesFound = currentScore = 0;
+  hintsUsedSoFar = 0; // change x: reset hints back to 0 for the new round
+
 
   const cfg = JSON.parse(localStorage.getItem("gameSavedSettings"));
   if (!cfg) return alert("Go to setting to set the game.");
+
+  /* change x
+   Update background when a new game starts for Sum and Answer & Mixed Array
+   */
+  document.body.classList.remove("bg-sum-and-answer", "bg-mixed-array");
+  if (cfg.pairType === "Sum and Answer") {
+    document.body.classList.add("bg-sum-and-answer");
+  } else if (cfg.pairType === "Mixed") {
+    document.body.classList.add("bg-mixed-array");
+  }
+  /* end of change x */
 
   pairsRemaining =
     cfg.boardSize == "4x4" ? 8 : cfg.boardSize == "4x5" ? 10 : 18;
   el("gameBoard").className = `game-board board-${cfg.boardSize}`;
   updateGame();//0002
   makingDeck(cfg.pairType, pairsRemaining);
+
+  /* change x: update example match on new game */
+  setExampleMatch(cfg.pairType);
+  /* end of change x */
 
   //shuffle cheched
   if (cfg.shuffleAnimation) el("gameBoard").classList.add("shuffle-active");
@@ -274,7 +405,7 @@ function processOutcomeLogic() {
     logNewMsg(`Matched: ${v1}___${v2}.`);
 
     cardFlipUno.classList.add("matched");
-        
+
     cardFlipTwo.classList.add("matched");
 
     cardFlipUno = cardFlipTwo = null;
@@ -295,13 +426,53 @@ function processOutcomeLogic() {
   } else {//the messages that pops up in game log when a pair that  does not match
     el("messageArea").innerHTML = "Picked cards are not a matching pair";
     logNewMsg("Picked cards are not a matching pair");
+
+    //CHange x
+    //Added red style for wrong pair, to make it more clear for the player
+    cardFlipUno.style.background = "#fee2e2";
+    cardFlipUno.style.color = "#991b1b";
+    cardFlipUno.style.borderColor = "#ef4444";
+
+    cardFlipTwo.style.background = "#fee2e2";
+    cardFlipTwo.style.color = "#991b1b";
+    cardFlipTwo.style.borderColor = "#ef4444";
+    //end of change x
+
+    //======================================================================================
+    // change x:
+    // For the difficulty level, removed the appearance of the card when tapped by 0.2 seconds 
+
+    var savedGameSettingsStr = localStorage.getItem("gameSavedSettings") || "{}";
+    var currentDiff = JSON.parse(savedGameSettingsStr).difficulty || "medium";
+    var waitTime = 1000; // default for easy
+
+    if (currentDiff.toLowerCase() == "medium") {
+      waitTime = 800; // subtract 0.2 seconds
+    } else if (currentDiff.toLowerCase() == "hard") {
+      waitTime = 600; // subtract another 0.2 seconds
+    }
+
     setTimeout(() => {
+      // Chnage x
+      //Reset red style after showing the wrong pair, to make it ready for the next try
+      cardFlipUno.style.background = "";
+      cardFlipUno.style.color = "";
+      cardFlipUno.style.borderColor = "";
+
+      cardFlipTwo.style.background = "";
+      cardFlipTwo.style.color = "";
+      cardFlipTwo.style.borderColor = "";
+      //end of change x
+
       cardFlipUno.innerHTML = cardFlipTwo.innerHTML = "?";
       cardFlipUno.classList.remove("flipped");
       cardFlipTwo.classList.remove("flipped");
       cardFlipUno = cardFlipTwo = null;
       isBoardLocked = false;
-    }, 1000);
+    }, waitTime);
+
+    // end of change x
+    //==========================================================================================
   }
 }
 
@@ -323,6 +494,68 @@ function updateGame() {//0002
   el("displayPairsLeft").innerHTML = pairsRemaining;
   el("displayScore").innerHTML = currentScore;
 }
+
+// =========================================================================
+// Change X
+//contructor adding, rubric req
+
+//Player Obj Constructor
+//linking the player's name to the best scoree
+function Player(name, bestScore) {
+  this.name = name || "Anonymous";
+  this.bestScore = bestScore || 0;
+
+  this.updateScore = function (newScore) {
+    if (newScore > this.bestScore) {
+      this.bestScore = newScore;
+    }
+  };
+}
+
+//GameState Obj Constructor
+//current dyamic state of an active session
+function GameState(pairsRemaining) {
+  this.movesCount = 0;
+  this.matchesFound = 0;
+  this.pairsRemaining = pairsRemaining || 0;
+  this.currentScore = 0;
+  this.elapsedSeconds = 0;
+  this.isBoardLocked = false;
+}
+
+// Card Obj Constructor
+//storing cards with the id, value, and status
+function Card(id, val, htmlContent) {
+  this.id = id;
+  this.val = val;
+  this.htmlContent = htmlContent || "?";
+  this.isFlipped = false;
+  this.isMatched = false;
+
+  this.flip = function () {
+    this.isFlipped = true;
+  };
+  this.match = function () {
+    this.isMatched = true;
+  };
+}
+
+//GameLog Obj Constructor
+//history of score events and game messages
+function GameLog() {
+  this.entries = [];
+
+  this.addEntry = function (message) {
+    let date = new Date();
+    let timeString = [date.getHours(), date.getMinutes(), date.getSeconds()]
+      .map((v) => (v < 10 ? "0" + v : v))
+      .join(":");
+    let fullMessage = `[${timeString}] ${message}`;
+    this.entries.push(fullMessage);
+    return fullMessage;
+  };
+}
+// =========================================================================
 
 //to be added according to rubric
 /*
